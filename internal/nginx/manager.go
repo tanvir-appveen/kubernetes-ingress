@@ -61,7 +61,7 @@ type Manager interface {
 	CreateDHParam(content string) (string, error)
 	CreateOpenTracingTracerConfig(content string) error
 	Start(done chan error)
-	Reload() error
+	Reload(isEndpoint bool) error
 	Quit()
 	UpdateConfigVersionFile(openTracing bool)
 	SetPlusClients(plusClient *client.NginxClient, plusConfigVersionCheckClient *http.Client)
@@ -268,7 +268,7 @@ func (lm *LocalManager) Start(done chan error) {
 }
 
 // Reload reloads NGINX.
-func (lm *LocalManager) Reload() error {
+func (lm *LocalManager) Reload(isEndPoint bool) error {
 	// write a new config version
 	lm.configVersion++
 	lm.UpdateConfigVersionFile(lm.OpenTracing)
@@ -287,7 +287,7 @@ func (lm *LocalManager) Reload() error {
 		return fmt.Errorf("could not get newest config version: %v", err)
 	}
 
-	lm.metricsCollector.IncNginxReloadCount()
+	lm.metricsCollector.IncNginxReloadCount(isEndPoint)
 
 	t2 := time.Now()
 	lm.metricsCollector.UpdateLastReloadTime(t2.Sub(t1))
