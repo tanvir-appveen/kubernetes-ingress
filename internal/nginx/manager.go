@@ -268,7 +268,7 @@ func (lm *LocalManager) Start(done chan error) {
 }
 
 // Reload reloads NGINX.
-func (lm *LocalManager) Reload(isEndPoint bool) error {
+func (lm *LocalManager) Reload(isEndPointUpdate bool) error {
 	// write a new config version
 	lm.configVersion++
 	lm.UpdateConfigVersionFile(lm.OpenTracing)
@@ -287,7 +287,7 @@ func (lm *LocalManager) Reload(isEndPoint bool) error {
 		return fmt.Errorf("could not get newest config version: %v", err)
 	}
 
-	lm.metricsCollector.IncNginxReloadCount(isEndPoint)
+	lm.metricsCollector.IncNginxReloadCount(isEndPointUpdate)
 
 	t2 := time.Now()
 	lm.metricsCollector.UpdateLastReloadTime(t2.Sub(t1))

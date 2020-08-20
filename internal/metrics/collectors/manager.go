@@ -6,9 +6,16 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+const (
+	// ReloadForEndpointsUpdate means that is caused by an endpoints update.
+	ReloadForEndpointsUpdate = true
+	// ReloadForOtherUpdate means that a reload is caused by an update for a resource(s) other than endpoints.
+	ReloadForOtherUpdate = false
+)
+
 // ManagerCollector is an interface for the metrics of the Nginx Manager
 type ManagerCollector interface {
-	IncNginxReloadCount(isEndPoint bool)
+	IncNginxReloadCount(isEndPointUpdate bool)
 	IncNginxReloadErrors()
 	UpdateLastReloadTime(ms time.Duration)
 	Register(registry *prometheus.Registry) error
@@ -64,10 +71,10 @@ func NewLocalManagerMetricsCollector(constLabels map[string]string) *LocalManage
 }
 
 // IncNginxReloadCount increments the counter of successful NGINX reloads and sets the last reload status to true
-func (nc *LocalManagerMetricsCollector) IncNginxReloadCount(isEndPoint bool) {
+func (nc *LocalManagerMetricsCollector) IncNginxReloadCount(isEndPointUpdate bool) {
 	var label string
-	if isEndPoint {
-		label = "endpoint"
+	if isEndPointUpdate {
+		label = "endpoints"
 	} else {
 		label = "other"
 	}
@@ -128,7 +135,7 @@ func NewManagerFakeCollector() *ManagerFakeCollector {
 func (nc *ManagerFakeCollector) Register(registry *prometheus.Registry) error { return nil }
 
 // IncNginxReloadCount implements a fake IncNginxReloadCount
-func (nc *ManagerFakeCollector) IncNginxReloadCount(isEnPoint bool) {}
+func (nc *ManagerFakeCollector) IncNginxReloadCount(isEndPointUpdate bool) {}
 
 // IncNginxReloadErrors implements a fake IncNginxReloadErrors
 func (nc *ManagerFakeCollector) IncNginxReloadErrors() {}
