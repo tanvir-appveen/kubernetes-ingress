@@ -72,13 +72,13 @@ func NewLocalManagerMetricsCollector(constLabels map[string]string) *LocalManage
 
 // IncNginxReloadCount increments the counter of successful NGINX reloads and sets the last reload status to true
 func (nc *LocalManagerMetricsCollector) IncNginxReloadCount(isEndPointUpdate bool) {
-	var label string
 	if isEndPointUpdate {
-		label = "endpoints"
+		nc.reloadsTotal.WithLabelValues("endpoints").Inc()
+		nc.reloadsTotal.WithLabelValues("other")
 	} else {
-		label = "other"
+		nc.reloadsTotal.WithLabelValues("other").Inc()
+		nc.reloadsTotal.WithLabelValues("endpoints")
 	}
-	nc.reloadsTotal.WithLabelValues(label).Inc()
 	nc.updateLastReloadStatus(true)
 }
 

@@ -20,7 +20,7 @@ controller:
     enable: false
   
   ## Enables the Ingress controller pods to use the host's network namespace.
-  hostNetwork: false
+  hostNetwork: true
 
   ## Enables debugging for NGINX. Uses the nginx-debug binary. Requires error-log-level: debug in the ConfigMap via `controller.config.entries`.
   nginxDebug: false
