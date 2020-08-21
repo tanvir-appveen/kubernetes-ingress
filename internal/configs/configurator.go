@@ -15,7 +15,6 @@ import (
 	"github.com/spiffe/go-spiffe/workload"
 
 	"github.com/nginxinc/kubernetes-ingress/internal/configs/version2"
-	"github.com/nginxinc/kubernetes-ingress/internal/metrics/collectors"
 	conf_v1alpha1 "github.com/nginxinc/kubernetes-ingress/pkg/apis/configuration/v1alpha1"
 
 	"github.com/golang/glog"
@@ -187,7 +186,7 @@ func (cnf *Configurator) AddOrUpdateIngress(ingEx *IngressEx) error {
 		return fmt.Errorf("Error adding or updating ingress %v/%v: %v", ingEx.Ingress.Namespace, ingEx.Ingress.Name, err)
 	}
 
-	if err := cnf.nginxManager.Reload(collectors.ReloadForOtherUpdate); err != nil {
+	if err := cnf.nginxManager.Reload(nginx.ReloadForOtherUpdate); err != nil {
 		return fmt.Errorf("Error reloading NGINX for %v/%v: %v", ingEx.Ingress.Namespace, ingEx.Ingress.Name, err)
 	}
 
@@ -223,7 +222,7 @@ func (cnf *Configurator) AddOrUpdateMergeableIngress(mergeableIngs *MergeableIng
 		return fmt.Errorf("Error when adding or updating ingress %v/%v: %v", mergeableIngs.Master.Ingress.Namespace, mergeableIngs.Master.Ingress.Name, err)
 	}
 
-	if err := cnf.nginxManager.Reload(collectors.ReloadForOtherUpdate); err != nil {
+	if err := cnf.nginxManager.Reload(nginx.ReloadForOtherUpdate); err != nil {
 		return fmt.Errorf("Error reloading NGINX for %v/%v: %v", mergeableIngs.Master.Ingress.Namespace, mergeableIngs.Master.Ingress.Name, err)
 	}
 
@@ -310,7 +309,7 @@ func (cnf *Configurator) AddOrUpdateVirtualServer(virtualServerEx *VirtualServer
 		return warnings, fmt.Errorf("Error adding or updating VirtualServer %v/%v: %v", virtualServerEx.VirtualServer.Namespace, virtualServerEx.VirtualServer.Name, err)
 	}
 
-	if err := cnf.nginxManager.Reload(collectors.ReloadForOtherUpdate); err != nil {
+	if err := cnf.nginxManager.Reload(nginx.ReloadForOtherUpdate); err != nil {
 		return warnings, fmt.Errorf("Error reloading NGINX for VirtualServer %v/%v: %v", virtualServerEx.VirtualServer.Namespace, virtualServerEx.VirtualServer.Name, err)
 	}
 
@@ -357,7 +356,7 @@ func (cnf *Configurator) AddOrUpdateVirtualServers(virtualServerExes []*VirtualS
 		allWarnings.Add(warnings)
 	}
 
-	if err := cnf.nginxManager.Reload(collectors.ReloadForOtherUpdate); err != nil {
+	if err := cnf.nginxManager.Reload(nginx.ReloadForOtherUpdate); err != nil {
 		return allWarnings, fmt.Errorf("Error when reloading NGINX when updating Policy: %v", err)
 	}
 
@@ -372,7 +371,7 @@ func (cnf *Configurator) AddOrUpdateTransportServer(transportServerEx *Transport
 		return fmt.Errorf("Error adding or updating TransportServer %v/%v: %v", transportServerEx.TransportServer.Namespace, transportServerEx.TransportServer.Name, err)
 	}
 
-	if err := cnf.nginxManager.Reload(collectors.ReloadForOtherUpdate); err != nil {
+	if err := cnf.nginxManager.Reload(nginx.ReloadForOtherUpdate); err != nil {
 		return fmt.Errorf("Error reloading NGINX for TransportServer %v/%v: %v", transportServerEx.TransportServer.Namespace, transportServerEx.TransportServer.Name, err)
 	}
 
@@ -531,7 +530,7 @@ func (cnf *Configurator) AddOrUpdateTLSSecret(secret *api_v1.Secret, ingExes []I
 		}
 	}
 
-	if err := cnf.nginxManager.Reload(collectors.ReloadForOtherUpdate); err != nil {
+	if err := cnf.nginxManager.Reload(nginx.ReloadForOtherUpdate); err != nil {
 		return fmt.Errorf("Error when reloading NGINX when updating Secret: %v", err)
 	}
 
@@ -552,7 +551,7 @@ func (cnf *Configurator) AddOrUpdateSpecialTLSSecrets(secret *api_v1.Secret, sec
 		cnf.nginxManager.CreateSecret(secretName, data, nginx.TLSSecretFileMode)
 	}
 
-	if err := cnf.nginxManager.Reload(collectors.ReloadForOtherUpdate); err != nil {
+	if err := cnf.nginxManager.Reload(nginx.ReloadForOtherUpdate); err != nil {
 		return fmt.Errorf("Error when reloading NGINX when updating the special Secrets: %v", err)
 	}
 
@@ -598,7 +597,7 @@ func (cnf *Configurator) DeleteSecret(key string, ingExes []IngressEx, mergeable
 	}
 
 	if len(ingExes)+len(mergeableIngresses)+len(virtualServerExes) > 0 {
-		if err := cnf.nginxManager.Reload(collectors.ReloadForOtherUpdate); err != nil {
+		if err := cnf.nginxManager.Reload(nginx.ReloadForOtherUpdate); err != nil {
 			return fmt.Errorf("Error when reloading NGINX when deleting Secret %v: %v", key, err)
 		}
 	}
@@ -618,7 +617,7 @@ func (cnf *Configurator) DeleteIngress(key string) error {
 		cnf.deleteIngressMetricsLabels(key)
 	}
 
-	if err := cnf.nginxManager.Reload(collectors.ReloadForOtherUpdate); err != nil {
+	if err := cnf.nginxManager.Reload(nginx.ReloadForOtherUpdate); err != nil {
 		return fmt.Errorf("Error when removing ingress %v: %v", key, err)
 	}
 
@@ -635,7 +634,7 @@ func (cnf *Configurator) DeleteVirtualServer(key string) error {
 		cnf.deleteVirtualServerMetricsLabels(fmt.Sprintf(key))
 	}
 
-	if err := cnf.nginxManager.Reload(collectors.ReloadForOtherUpdate); err != nil {
+	if err := cnf.nginxManager.Reload(nginx.ReloadForOtherUpdate); err != nil {
 		return fmt.Errorf("Error when removing VirtualServer %v: %v", key, err)
 	}
 
@@ -649,7 +648,7 @@ func (cnf *Configurator) DeleteTransportServer(key string) error {
 		return fmt.Errorf("Error when removing TransportServer %v: %v", key, err)
 	}
 
-	err = cnf.nginxManager.Reload(collectors.ReloadForOtherUpdate)
+	err = cnf.nginxManager.Reload(nginx.ReloadForOtherUpdate)
 	if err != nil {
 		return fmt.Errorf("Error when removing TransportServer %v: %v", key, err)
 	}
@@ -695,7 +694,7 @@ func (cnf *Configurator) UpdateEndpoints(ingExes []*IngressEx) error {
 		return nil
 	}
 
-	if err := cnf.nginxManager.Reload(collectors.ReloadForEndpointsUpdate); err != nil {
+	if err := cnf.nginxManager.Reload(nginx.ReloadForEndpointsUpdate); err != nil {
 		return fmt.Errorf("Error reloading NGINX when updating endpoints: %v", err)
 	}
 
@@ -728,7 +727,7 @@ func (cnf *Configurator) UpdateEndpointsMergeableIngress(mergeableIngresses []*M
 		return nil
 	}
 
-	if err := cnf.nginxManager.Reload(collectors.ReloadForEndpointsUpdate); err != nil {
+	if err := cnf.nginxManager.Reload(nginx.ReloadForEndpointsUpdate); err != nil {
 		return fmt.Errorf("Error reloading NGINX when updating endpoints for %v: %v", mergeableIngresses, err)
 	}
 
@@ -760,7 +759,7 @@ func (cnf *Configurator) UpdateEndpointsForVirtualServers(virtualServerExes []*V
 		return nil
 	}
 
-	if err := cnf.nginxManager.Reload(collectors.ReloadForEndpointsUpdate); err != nil {
+	if err := cnf.nginxManager.Reload(nginx.ReloadForEndpointsUpdate); err != nil {
 		return fmt.Errorf("Error reloading NGINX when updating endpoints: %v", err)
 	}
 
@@ -807,7 +806,7 @@ func (cnf *Configurator) UpdateEndpointsForTransportServers(transportServerExes 
 		return nil
 	}
 
-	if err := cnf.nginxManager.Reload(collectors.ReloadForEndpointsUpdate); err != nil {
+	if err := cnf.nginxManager.Reload(nginx.ReloadForEndpointsUpdate); err != nil {
 		return fmt.Errorf("Error reloading NGINX when updating endpoints: %v", err)
 	}
 
@@ -949,7 +948,7 @@ func (cnf *Configurator) UpdateConfig(cfgParams *ConfigParams, ingExes []*Ingres
 	}
 
 	cnf.nginxManager.SetOpenTracing(mainCfg.OpenTracingLoadModule)
-	if err := cnf.nginxManager.Reload(collectors.ReloadForOtherUpdate); err != nil {
+	if err := cnf.nginxManager.Reload(nginx.ReloadForOtherUpdate); err != nil {
 		return allWarnings, fmt.Errorf("Error when updating config from ConfigMap: %v", err)
 	}
 
@@ -982,7 +981,7 @@ func (cnf *Configurator) UpdateGlobalConfiguration(globalConfiguration *conf_v1a
 		}
 	}
 
-	if err := cnf.nginxManager.Reload(collectors.ReloadForOtherUpdate); err != nil {
+	if err := cnf.nginxManager.Reload(nginx.ReloadForOtherUpdate); err != nil {
 		return updatedTransportServerExes, deletedTransportServerExes, fmt.Errorf("Error when updating global configuration: %v", err)
 	}
 
@@ -1098,7 +1097,7 @@ func (cnf *Configurator) AddOrUpdateSpiffeCerts(svidResponse *workload.X509SVIDs
 	cnf.nginxManager.CreateSecret(spiffeCertFileName, createSpiffeCert(svid.Certificates), spiffeCertsFileMode)
 	cnf.nginxManager.CreateSecret(spiffeBundleFileName, createSpiffeCert(svid.TrustBundle), spiffeCertsFileMode)
 
-	err = cnf.nginxManager.Reload(collectors.ReloadForOtherUpdate)
+	err = cnf.nginxManager.Reload(nginx.ReloadForOtherUpdate)
 	if err != nil {
 		return fmt.Errorf("error when reloading NGINX when updating the SPIFFE Certs: %v", err)
 	}
@@ -1175,7 +1174,7 @@ func (cnf *Configurator) AddOrUpdateAppProtectResource(resource *unstructured.Un
 		}
 	}
 
-	if err := cnf.nginxManager.Reload(collectors.ReloadForOtherUpdate); err != nil {
+	if err := cnf.nginxManager.Reload(nginx.ReloadForOtherUpdate); err != nil {
 		return fmt.Errorf("Error when reloading NGINX when updating %v: %v", resource.GetKind(), err)
 	}
 
@@ -1202,7 +1201,7 @@ func (cnf *Configurator) DeleteAppProtectPolicy(polNamespaceame string, ingExes 
 		}
 	}
 
-	if err := cnf.nginxManager.Reload(collectors.ReloadForOtherUpdate); err != nil {
+	if err := cnf.nginxManager.Reload(nginx.ReloadForOtherUpdate); err != nil {
 		return fmt.Errorf("Error when reloading NGINX when removing App Protect Policy: %v", err)
 	}
 
@@ -1229,7 +1228,7 @@ func (cnf *Configurator) DeleteAppProtectLogConf(logConfNamespaceame string, ing
 		}
 	}
 
-	if err := cnf.nginxManager.Reload(collectors.ReloadForOtherUpdate); err != nil {
+	if err := cnf.nginxManager.Reload(nginx.ReloadForOtherUpdate); err != nil {
 		return fmt.Errorf("Error when reloading NGINX when removing App Protect Log Configuration: %v", err)
 	}
 
@@ -1247,7 +1246,7 @@ func (cnf *Configurator) AddInternalRouteConfig() error {
 		return fmt.Errorf("Error when writing main Config: %v", err)
 	}
 	cnf.nginxManager.CreateMainConfig(mainCfgContent)
-	if err := cnf.nginxManager.Reload(collectors.ReloadForOtherUpdate); err != nil {
+	if err := cnf.nginxManager.Reload(nginx.ReloadForOtherUpdate); err != nil {
 		return fmt.Errorf("Error when reloading nginx: %v", err)
 	}
 	return nil
