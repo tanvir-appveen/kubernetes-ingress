@@ -103,6 +103,12 @@ func TestGenerateTransportServerConfigForTCP(t *testing.T) {
 						Address: "10.0.0.20:5001",
 					},
 				},
+				UpstreamLabels: version2.UpstreamLabels{
+					ResourceName:      "tcp-app",
+					ResourceType:      "transportserver",
+					ResourceNamespace: "default",
+					Service:           "tcp-app-svc",
+				},
 			},
 		},
 		Server: version2.StreamServer{
@@ -168,6 +174,12 @@ func TestGenerateTransportServerConfigForUDP(t *testing.T) {
 					{
 						Address: "10.0.0.20:5001",
 					},
+				},
+				UpstreamLabels: version2.UpstreamLabels{
+					ResourceName:      "udp-app",
+					ResourceType:      "transportserver",
+					ResourceNamespace: "default",
+					Service:           "udp-app-svc",
 				},
 			},
 		},

@@ -13,6 +13,7 @@ const nginxNonExistingUnixSocket = "unix:/var/lib/nginx/non-existing-unix-socket
 type TransportServerEx struct {
 	TransportServer *conf_v1alpha1.TransportServer
 	Endpoints       map[string][]string
+	PodsByIP        map[string]PodInfo
 }
 
 func (tsEx *TransportServerEx) String() string {
@@ -73,6 +74,11 @@ func generateStreamUpstreams(transportServerEx *TransportServerEx, upstreamNamer
 		endpoints := transportServerEx.Endpoints[endpointsKey]
 
 		ups := generateStreamUpstream(name, endpoints, isPlus)
+
+		ups.UpstreamLabels.Service = u.Service
+		ups.UpstreamLabels.ResourceType = "transportserver"
+		ups.UpstreamLabels.ResourceName = u.Name
+		ups.UpstreamLabels.ResourceNamespace = transportServerEx.TransportServer.Namespace
 
 		upstreams = append(upstreams, ups)
 	}

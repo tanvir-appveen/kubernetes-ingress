@@ -65,12 +65,15 @@ type tlsPassthroughPair struct {
 // metricLabelsIndex keeps the relations between Ingress Controller resources and NGINX configuration.
 // Used to be able to add Prometheus Metrics variable labels grouped by resource key.
 type metricLabelsIndex struct {
-	ingressUpstreams           map[string][]string
-	virtualServerUpstreams     map[string][]string
-	ingressServerZones         map[string][]string
-	virtualServerServerZones   map[string][]string
-	ingressUpstreamPeers       map[string][]string
-	virtualServerUpstreamPeers map[string][]string
+	ingressUpstreams             map[string][]string
+	virtualServerUpstreams       map[string][]string
+	transportServerUpstreams     map[string][]string
+	ingressServerZones           map[string][]string
+	virtualServerServerZones     map[string][]string
+	transportServerServerZones   map[string][]string
+	ingressUpstreamPeers         map[string][]string
+	virtualServerUpstreamPeers   map[string][]string
+	transportServerUpstreamPeers map[string][]string
 }
 
 // Configurator configures NGINX.
@@ -99,12 +102,15 @@ func NewConfigurator(nginxManager nginx.Manager, staticCfgParams *StaticConfigPa
 	templateExecutor *version1.TemplateExecutor, templateExecutorV2 *version2.TemplateExecutor, isPlus bool, isWildcardEnabled bool,
 	labelUpdater collector.LabelUpdater, isPrometheusEnabled bool, latencyCollector latCollector.LatencyCollector, isLatencyMetricsEnabled bool) *Configurator {
 	metricLabelsIndex := &metricLabelsIndex{
-		ingressUpstreams:           make(map[string][]string),
-		virtualServerUpstreams:     make(map[string][]string),
-		ingressServerZones:         make(map[string][]string),
-		virtualServerServerZones:   make(map[string][]string),
-		ingressUpstreamPeers:       make(map[string][]string),
-		virtualServerUpstreamPeers: make(map[string][]string),
+		ingressUpstreams:             make(map[string][]string),
+		virtualServerUpstreams:       make(map[string][]string),
+		transportServerUpstreams:     make(map[string][]string),
+		ingressServerZones:           make(map[string][]string),
+		virtualServerServerZones:     make(map[string][]string),
+		transportServerServerZones:   make(map[string][]string),
+		ingressUpstreamPeers:         make(map[string][]string),
+		virtualServerUpstreamPeers:   make(map[string][]string),
+		transportServerUpstreamPeers: make(map[string][]string),
 	}
 
 	cnf := Configurator{
@@ -454,6 +460,86 @@ func (cnf *Configurator) AddOrUpdateVirtualServers(virtualServerExes []*VirtualS
 	return allWarnings, nil
 }
 
+func (cnf *Configurator) updateTransportServerMetricsLabels(transportServerEx *TransportServerEx, upstreams []version2.StreamUpstream) {
+	labels := make(map[string][]string)
+	newUpstreams := make(map[string]bool)
+	var newUpstreamsNames []string
+
+	upstreamServerPeerLabels := make(map[string][]string)
+	newPeers := make(map[string]bool)
+	var newPeersIPs []string
+
+	for _, u := range upstreams {
+		labels[u.Name] = createUpstreamServerLabels(u.UpstreamLabels.Service, u.UpstreamLabels.ResourceType, u.UpstreamLabels.ResourceName, u.UpstreamLabels.ResourceNamespace)
+		newUpstreams[u.Name] = true
+		newUpstreamsNames = append(newUpstreamsNames, u.Name)
+
+		for _, server := range u.Servers {
+			podInfo := transportServerEx.PodsByIP[server.Address]
+			labelKey := fmt.Sprintf("%v/%v", u.Name, server.Address)
+			upstreamServerPeerLabels[labelKey] = []string{podInfo.Name}
+
+			if cnf.staticCfgParams.NginxServiceMesh {
+				ownerLabelVal := fmt.Sprintf("%s/%s", podInfo.OwnerType, podInfo.OwnerName)
+				upstreamServerPeerLabels[labelKey] = append(upstreamServerPeerLabels[labelKey], ownerLabelVal)
+			}
+
+			newPeers[labelKey] = true
+			newPeersIPs = append(newPeersIPs, labelKey)
+		}
+	}
+
+	key := fmt.Sprintf("%v/%v", transportServerEx.TransportServer.Namespace, transportServerEx.TransportServer.Name)
+
+	removedPeers := findRemovedKeys(cnf.metricLabelsIndex.transportServerUpstreamPeers[key], newPeers)
+	cnf.metricLabelsIndex.transportServerUpstreamPeers[key] = newPeersIPs
+	cnf.latencyCollector.UpdateUpstreamServerPeerLabels(upstreamServerPeerLabels)
+	cnf.latencyCollector.DeleteUpstreamServerPeerLabels(removedPeers)
+
+	removedUpstreams := findRemovedKeys(cnf.metricLabelsIndex.transportServerUpstreams[key], newUpstreams)
+	cnf.latencyCollector.UpdateUpstreamServerLabels(labels)
+	cnf.metricLabelsIndex.transportServerUpstreams[key] = newUpstreamsNames
+
+	cnf.latencyCollector.DeleteUpstreamServerLabels(removedUpstreams)
+	cnf.latencyCollector.DeleteMetrics(removedPeers)
+
+	if cnf.isPlus {
+		cnf.labelUpdater.UpdateStreamUpstreamServerPeerLabels(upstreamServerPeerLabels)
+		cnf.labelUpdater.DeleteStreamUpstreamServerPeerLabels(removedPeers)
+		cnf.labelUpdater.UpdateStreamUpstreamServerLabels(labels)
+		cnf.labelUpdater.DeleteStreamUpstreamServerLabels(removedUpstreams)
+
+		streamServerZoneLabels := make(map[string][]string)
+		newZones := make(map[string]bool)
+		newZonesNames := []string{transportServerEx.TransportServer.Name}
+
+		streamServerZoneLabels[transportServerEx.TransportServer.Name] = createServerZoneLabels(
+			"transportserver", transportServerEx.TransportServer.Name, transportServerEx.TransportServer.Namespace)
+
+		newZones[transportServerEx.TransportServer.Name] = true
+		removedZones := findRemovedKeys(cnf.metricLabelsIndex.transportServerServerZones[key], newZones)
+		cnf.metricLabelsIndex.transportServerServerZones[key] = newZonesNames
+		cnf.labelUpdater.UpdateServerZoneLabels(streamServerZoneLabels)
+		cnf.labelUpdater.DeleteServerZoneLabels(removedZones)
+	}
+}
+
+func (cnf *Configurator) deleteTransportServerMetricsLabels(key string) {
+	cnf.latencyCollector.DeleteUpstreamServerLabels(cnf.metricLabelsIndex.transportServerUpstreams[key])
+	cnf.latencyCollector.DeleteUpstreamServerPeerLabels(cnf.metricLabelsIndex.transportServerUpstreamPeers[key])
+	cnf.latencyCollector.DeleteMetrics(cnf.metricLabelsIndex.transportServerUpstreamPeers[key])
+
+	if cnf.isPlus {
+		cnf.labelUpdater.DeleteUpstreamServerLabels(cnf.metricLabelsIndex.transportServerUpstreams[key])
+		cnf.labelUpdater.DeleteServerZoneLabels(cnf.metricLabelsIndex.transportServerServerZones[key])
+		cnf.labelUpdater.DeleteUpstreamServerPeerLabels(cnf.metricLabelsIndex.transportServerUpstreamPeers[key])
+	}
+
+	delete(cnf.metricLabelsIndex.transportServerUpstreams, key)
+	delete(cnf.metricLabelsIndex.transportServerServerZones, key)
+	delete(cnf.metricLabelsIndex.transportServerUpstreamPeers, key)
+}
+
 // AddOrUpdateTransportServer adds or updates NGINX configuration for the TransportServer resource.
 // It is a responsibility of the caller to check that the TransportServer references an existing listener.
 func (cnf *Configurator) AddOrUpdateTransportServer(transportServerEx *TransportServerEx) error {
@@ -478,6 +564,10 @@ func (cnf *Configurator) addOrUpdateTransportServer(transportServerEx *Transport
 	content, err := cnf.templateExecutorV2.ExecuteTransportServerTemplate(&tsCfg)
 	if err != nil {
 		return fmt.Errorf("Error generating TransportServer config %v: %v", name, err)
+	}
+
+	if (cnf.isPlus && cnf.isPrometheusEnabled) || cnf.isLatencyMetricsEnabled {
+		cnf.updateTransportServerMetricsLabels(transportServerEx, tsCfg.Upstreams)
 	}
 
 	cnf.nginxManager.CreateStreamConfig(name, content)
