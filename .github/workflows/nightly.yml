@@ -34,8 +34,7 @@ jobs:
       - name: Build Binary
         run: >
           go mod verify && go mod vendor &&
-          make binary
-          BUILD_IN_CONTAINER=0
+          make build
           VERSION=${{ env.VERSION }}
           IC_VERSION=${{ env.VERSION }}-${{ steps.commit.outputs.sha }}
           GIT_COMMIT=${{ steps.commit.outputs.sha }}
