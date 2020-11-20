@@ -2,7 +2,7 @@ VERSION = edge
 TAG = $(VERSION)
 PREFIX = nginx/nginx-ingress
 NGINX_VERSION = 1.19.3
-GOLANG_CONTAINER = golang:1.15
+GOLANG_CONTAINER = golang:1.15-alpine
 GOFLAGS ?= -mod=vendor
 TARGET ?= local
 
@@ -16,7 +16,7 @@ export DOCKER_BUILDKIT = 1
 .DEFAULT_GOAL:=help
 
 .PHONY: help
-help: ## Dispaly this help
+help: ## Display this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 all: test lint verify-codegen update-crds build debian-image
@@ -84,7 +84,7 @@ debian-image-opentracing: ## Create Docker image for Ingress Controller (with op
 	docker build $(DOCKER_BUILD_OPTIONS) --target $(TARGET) -f build/DockerfileWithOpentracing -t $(PREFIX):$(TAG) .
 
 .PHONY: debian-image-opentracing-plus
-debian-image-opentracing-plus: ## Create Docker image for Ingress Controller (with opentracinga and plus)
+debian-image-opentracing-plus: ## Create Docker image for Ingress Controller (with opentracing and plus)
 	docker build $(DOCKER_BUILD_OPTIONS) --target $(TARGET) --secret id=nginx-repo.crt,src=tempdir/nginx-repo.crt --secret id=nginx-repo.key,src=tempdir/nginx-repo.key -f build/DockerfileWithOpentracingForPlus -t $(PREFIX):$(TAG) .
 
 .PHONY: push
@@ -97,7 +97,7 @@ clean:  ## Remove nginx-ingress binary and temp folder
 	rm -rf tempdir
 
 .PHONY: deps
-deps: ## Add missing and remove unsed modules, verify deps and make a vendored copy
+deps: ## Add missing and remove unused modules, verify deps and make a vendored copy
 	@go mod tidy && go mod verify && go mod vendor
 
 .PHONY: clean-cache
