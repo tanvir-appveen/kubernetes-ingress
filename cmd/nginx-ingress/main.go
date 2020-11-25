@@ -547,13 +547,18 @@ func main() {
 	syslogListener = metrics.NewSyslogFakeServer()
 	if *enablePrometheusMetrics {
 		upstreamServerVariableLabels := []string{"service", "resource_type", "resource_name", "resource_namespace"}
+		streamUpstreamServerVariableLabels := []string{"service", "resource_type", "resource_name", "resource_namespace"}
 		upstreamServerPeerVariableLabelNames := []string{"pod_name"}
+		streamUpstreamServerPeerVariableLabelNames := []string{"pod_name"}
 		if staticCfgParams.NginxServiceMesh {
 			upstreamServerPeerVariableLabelNames = append(upstreamServerPeerVariableLabelNames, "pod_owner")
+			streamUpstreamServerPeerVariableLabelNames = append(streamUpstreamServerPeerVariableLabelNames, "pod_owner")
 		}
 		if *nginxPlus {
 			serverZoneVariableLabels := []string{"resource_type", "resource_name", "resource_namespace"}
-			variableLabelNames := nginxCollector.NewVariableLabelNames(upstreamServerVariableLabels, serverZoneVariableLabels, upstreamServerPeerVariableLabelNames)
+			streamServerZoneVariableLabels := []string{"resource_type", "resource_name", "resource_namespace"}
+			variableLabelNames := nginxCollector.NewVariableLabelNames(upstreamServerVariableLabels, serverZoneVariableLabels, upstreamServerPeerVariableLabelNames,
+				streamUpstreamServerVariableLabels, streamServerZoneVariableLabels, streamUpstreamServerPeerVariableLabelNames)
 			plusCollector = nginxCollector.NewNginxPlusCollector(plusClient, "nginx_ingress_nginxplus", variableLabelNames, constLabels)
 			go metrics.RunPrometheusListenerForNginxPlus(*prometheusMetricsListenPort, plusCollector, registry)
 		} else {

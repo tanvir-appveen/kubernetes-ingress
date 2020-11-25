@@ -595,6 +595,20 @@ func (u *mockLabelUpdater) DeleteServerZoneLabels(zoneNames []string) {
 	}
 }
 
+// UpdateStreamServerZoneLabels updates the Server Zone Labels
+func (u *mockLabelUpdater) UpdateStreamServerZoneLabels(streamServerZoneLabelValues map[string][]string) {
+	for k, v := range streamServerZoneLabelValues {
+		u.serverZoneLabels[k] = v
+	}
+}
+
+// DeleteStreamServerZoneLabels deletes the Server Zone Labels
+func (u *mockLabelUpdater) DeleteStreamServerZoneLabels(zoneNames []string) {
+	for _, k := range zoneNames {
+		delete(u.serverZoneLabels, k)
+	}
+}
+
 type mockLatencyCollector struct {
 	upstreamServerLabels        map[string][]string
 	upstreamServerPeerLabels    map[string][]string

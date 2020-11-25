@@ -154,7 +154,15 @@ func createUpstreamServerLabels(svcName string, resourceType string, resourceNam
 	return []string{svcName, resourceType, resourceName, resourceNamespace}
 }
 
+func createStreamUpstreamServerLabels(svcName string, resourceType string, resourceName string, resourceNamespace string) []string {
+	return []string{svcName, resourceType, resourceName, resourceNamespace}
+}
+
 func createServerZoneLabels(resourceType string, resourceName string, resourceNamespace string) []string {
+	return []string{resourceType, resourceName, resourceNamespace}
+}
+
+func createStreamServerZoneLabels(resourceType string, resourceName string, resourceNamespace string) []string {
 	return []string{resourceType, resourceName, resourceNamespace}
 }
 
@@ -470,7 +478,7 @@ func (cnf *Configurator) updateTransportServerMetricsLabels(transportServerEx *T
 	var newPeersIPs []string
 
 	for _, u := range upstreams {
-		labels[u.Name] = createUpstreamServerLabels(u.UpstreamLabels.Service, u.UpstreamLabels.ResourceType, u.UpstreamLabels.ResourceName, u.UpstreamLabels.ResourceNamespace)
+		labels[u.Name] = createStreamUpstreamServerLabels(u.UpstreamLabels.Service, u.UpstreamLabels.ResourceType, u.UpstreamLabels.ResourceName, u.UpstreamLabels.ResourceNamespace)
 		newUpstreams[u.Name] = true
 		newUpstreamsNames = append(newUpstreamsNames, u.Name)
 
@@ -513,14 +521,14 @@ func (cnf *Configurator) updateTransportServerMetricsLabels(transportServerEx *T
 		newZones := make(map[string]bool)
 		newZonesNames := []string{transportServerEx.TransportServer.Name}
 
-		streamServerZoneLabels[transportServerEx.TransportServer.Name] = createServerZoneLabels(
+		streamServerZoneLabels[transportServerEx.TransportServer.Name] = createStreamServerZoneLabels(
 			"transportserver", transportServerEx.TransportServer.Name, transportServerEx.TransportServer.Namespace)
 
 		newZones[transportServerEx.TransportServer.Name] = true
 		removedZones := findRemovedKeys(cnf.metricLabelsIndex.transportServerServerZones[key], newZones)
 		cnf.metricLabelsIndex.transportServerServerZones[key] = newZonesNames
-		cnf.labelUpdater.UpdateServerZoneLabels(streamServerZoneLabels)
-		cnf.labelUpdater.DeleteServerZoneLabels(removedZones)
+		cnf.labelUpdater.UpdateStreamServerZoneLabels(streamServerZoneLabels)
+		cnf.labelUpdater.DeleteStreamServerZoneLabels(removedZones)
 	}
 }
 
