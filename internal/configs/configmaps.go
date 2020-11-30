@@ -45,15 +45,27 @@ func ParseConfigMap(cfgm *v1.ConfigMap, nginxPlus bool, hasAppProtect bool) *Con
 	}
 
 	if proxyConnectTimeout, exists := cfgm.Data["proxy-connect-timeout"]; exists {
-		cfgParams.ProxyConnectTimeout = proxyConnectTimeout
+		if parsedProxyConnectTimeout, err := ParseTime(proxyConnectTimeout); err != nil {
+			glog.Errorf("Configmap %s/%s: Invalid value for the proxy-connect-timeout key: got %q: %v", cfgm.GetNamespace(), cfgm.GetName(), proxyConnectTimeout, err)
+		} else {
+			cfgParams.ProxyConnectTimeout = parsedProxyConnectTimeout
+		}
 	}
 
 	if proxyReadTimeout, exists := cfgm.Data["proxy-read-timeout"]; exists {
-		cfgParams.ProxyReadTimeout = proxyReadTimeout
+		if parsedProxyReadTimeout, err := ParseTime(proxyReadTimeout); err != nil {
+			glog.Errorf("Configmap %s/%s: Invalid value for the proxy-read-timeout key: got %q: %v", cfgm.GetNamespace(), cfgm.GetName(), proxyReadTimeout, err)
+		} else {
+			cfgParams.ProxyReadTimeout = parsedProxyReadTimeout
+		}
 	}
 
 	if proxySendTimeout, exists := cfgm.Data["proxy-send-timeout"]; exists {
-		cfgParams.ProxySendTimeout = proxySendTimeout
+		if parsedProxySendTimeout, err := ParseTime(proxySendTimeout); err != nil {
+			glog.Errorf("Configmap %s/%s: Invalid value for the proxy-send-timeout key: got %q: %v", cfgm.GetNamespace(), cfgm.GetName(), proxySendTimeout, err)
+		} else {
+			cfgParams.ProxySendTimeout = parsedProxySendTimeout
+		}
 	}
 
 	if proxyHideHeaders, exists, err := GetMapKeyAsStringSlice(cfgm.Data, "proxy-hide-headers", cfgm, ","); exists {
@@ -73,7 +85,11 @@ func ParseConfigMap(cfgm *v1.ConfigMap, nginxPlus bool, hasAppProtect bool) *Con
 	}
 
 	if clientMaxBodySize, exists := cfgm.Data["client-max-body-size"]; exists {
-		cfgParams.ClientMaxBodySize = clientMaxBodySize
+		if parsedClientMaxBodySize, err := ParseOffset(clientMaxBodySize); err != nil {
+			glog.Errorf("Configmap %s/%s: Invalid value for the client-max-body-size key: got %q: %v", cfgm.GetNamespace(), cfgm.GetName(), clientMaxBodySize, err)
+		} else {
+			cfgParams.ClientMaxBodySize = parsedClientMaxBodySize
+		}
 	}
 
 	if serverNamesHashBucketSize, exists := cfgm.Data["server-names-hash-bucket-size"]; exists {
@@ -255,15 +271,27 @@ func ParseConfigMap(cfgm *v1.ConfigMap, nginxPlus bool, hasAppProtect bool) *Con
 	}
 
 	if proxyBuffers, exists := cfgm.Data["proxy-buffers"]; exists {
-		cfgParams.ProxyBuffers = proxyBuffers
+		if parsedProxyBuffers, err := ParseProxyBuffers(proxyBuffers); err != nil {
+			glog.Errorf("Configmap %s/%s: Invalid value for the proxy-buffers key: got %q: %v", cfgm.GetNamespace(), cfgm.GetName(), proxyBuffers, err)
+		} else {
+			cfgParams.ProxyBuffers = parsedProxyBuffers
+		}
 	}
 
 	if proxyBufferSize, exists := cfgm.Data["proxy-buffer-size"]; exists {
-		cfgParams.ProxyBufferSize = proxyBufferSize
+		if parsedProxyBufferSize, err := ParseSize(proxyBufferSize); err != nil {
+			glog.Errorf("Configmap %s/%s: Invalid value for the proxy-buffer-size key: got %q: %v", cfgm.GetNamespace(), cfgm.GetName(), proxyBufferSize, err)
+		} else {
+			cfgParams.ProxyBufferSize = parsedProxyBufferSize
+		}
 	}
 
 	if proxyMaxTempFileSize, exists := cfgm.Data["proxy-max-temp-file-size"]; exists {
-		cfgParams.ProxyMaxTempFileSize = proxyMaxTempFileSize
+		if parsedProxyMaxTempFileSize, err := ParseSize(proxyMaxTempFileSize); err != nil {
+			glog.Errorf("Configmap %s/%s: Invalid value for the proxy-max-temp-file-size key: got %q: %v", cfgm.GetNamespace(), cfgm.GetName(), proxyMaxTempFileSize, err)
+		} else {
+			cfgParams.ProxyMaxTempFileSize = parsedProxyMaxTempFileSize
+		}
 	}
 
 	if mainMainSnippets, exists, err := GetMapKeyAsStringSlice(cfgm.Data, "main-snippets", cfgm, "\n"); exists {
@@ -330,20 +358,28 @@ func ParseConfigMap(cfgm *v1.ConfigMap, nginxPlus bool, hasAppProtect bool) *Con
 		}
 	}
 
-	if maxFails, exists, err := GetMapKeyAsInt(cfgm.Data, "max-fails", cfgm); exists {
-		if err != nil {
-			glog.Error(err)
+	if maxFails, exists := cfgm.Data["max-fails"]; exists {
+		if parsedMaxFails, err := ParseNonNegativeInt(maxFails); err != nil {
+			glog.Errorf("Configmap %s/%s: Invalid value for the max-fails key: got %q: %v", cfgm.GetNamespace(), cfgm.GetName(), parsedMaxFails, err)
 		} else {
-			cfgParams.MaxFails = maxFails
+			cfgParams.MaxFails = parsedMaxFails
 		}
 	}
 
 	if upstreamZoneSize, exists := cfgm.Data["upstream-zone-size"]; exists {
-		cfgParams.UpstreamZoneSize = upstreamZoneSize
+		if parsedUpstreamZoneSize, err := ParseSize(upstreamZoneSize); err != nil {
+			glog.Errorf("Configmap %s/%s: Invalid value for the upstream-zone-size key: got %q: %v", cfgm.GetNamespace(), cfgm.GetName(), upstreamZoneSize, err)
+		} else {
+			cfgParams.UpstreamZoneSize = parsedUpstreamZoneSize
+		}
 	}
 
 	if failTimeout, exists := cfgm.Data["fail-timeout"]; exists {
-		cfgParams.FailTimeout = failTimeout
+		if parsedFailTimeout, err := ParseTime(failTimeout); err != nil {
+			glog.Errorf("Configmap %s/%s: Invalid value for the fail-timeout key: got %q: %v", cfgm.GetNamespace(), cfgm.GetName(), failTimeout, err)
+		} else {
+			cfgParams.FailTimeout = parsedFailTimeout
+		}
 	}
 
 	if mainTemplate, exists := cfgm.Data["main-template"]; exists {

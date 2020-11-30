@@ -162,6 +162,14 @@ func validateHashLBMethod(method string) (string, error) {
 	return "", fmt.Errorf("Invalid load balancing method: %q", method)
 }
 
+func ParseNonNegativeInt(s string) (int, error) {
+	i, err := strconv.Atoi(s)
+	if err != nil || i < 0 {
+		return 0, errors.New("Invalid non-negative int")
+	}
+	return i, nil
+}
+
 // http://nginx.org/en/docs/syntax.html
 var validTimeSuffixes = []string{
 	"ms",
@@ -185,6 +193,45 @@ func ParseTime(s string) (string, error) {
 		return s, nil
 	}
 	return "", errors.New("Invalid time string")
+}
+
+// http://nginx.org/en/docs/syntax.html
+const OffsetFmt = `\d+[kKmMgG]?`
+
+var offsetRegexp = regexp.MustCompile("^" + OffsetFmt + "$")
+
+func ParseOffset(s string) (string, error) {
+	s = strings.TrimSpace(s)
+
+	if offsetRegexp.MatchString(s) {
+		return s, nil
+	}
+	return "", errors.New("Invalid offset string")
+}
+
+// http://nginx.org/en/docs/syntax.html
+const SizeFmt = `\d+[kKmM]?`
+
+var sizeRegexp = regexp.MustCompile("^" + SizeFmt + "$")
+
+func ParseSize(s string) (string, error) {
+	s = strings.TrimSpace(s)
+
+	if sizeRegexp.MatchString(s) {
+		return s, nil
+	}
+	return "", errors.New("Invalid size string")
+}
+
+var proxyBuffersRegexp = regexp.MustCompile(`^\d+ \d+[kKmM]?$`)
+
+func ParseProxyBuffers(s string) (string, error) {
+	s = strings.TrimSpace(s)
+
+	if proxyBuffersRegexp.MatchString(s) {
+		return s, nil
+	}
+	return "", errors.New("Invalid proxy buffers string")
 }
 
 var threshEx = regexp.MustCompile(`high=([1-9]|[1-9][0-9]|100) low=([1-9]|[1-9][0-9]|100)\b`)

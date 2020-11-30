@@ -383,6 +383,46 @@ func TestParseTime(t *testing.T) {
 	}
 }
 
+func TestParseOffset(t *testing.T) {
+	var testsWithValidInput = []string{"1", "2k", "2K", "3m", "3M", "4g", "4G"}
+	var invalidInput = []string{"-1", "", "blah"}
+	for _, test := range testsWithValidInput {
+		result, err := ParseOffset(test)
+		if err != nil {
+			t.Errorf("TestParseOffset(%q) returned an error for valid input", test)
+		}
+		if test != result {
+			t.Errorf("TestParseOffset(%q) returned %q expected %q", test, result, test)
+		}
+	}
+	for _, test := range invalidInput {
+		result, err := ParseOffset(test)
+		if err == nil {
+			t.Errorf("TestParseOffset(%q) didn't return error. Returned: %q", test, result)
+		}
+	}
+}
+
+func TestParseSize(t *testing.T) {
+	var testsWithValidInput = []string{"1", "2k", "2K", "3m", "3M"}
+	var invalidInput = []string{"-1", "", "blah", "4g", "4G"}
+	for _, test := range testsWithValidInput {
+		result, err := ParseSize(test)
+		if err != nil {
+			t.Errorf("TestParseSize(%q) returned an error for valid input", test)
+		}
+		if test != result {
+			t.Errorf("TestParseSize(%q) returned %q expected %q", test, result, test)
+		}
+	}
+	for _, test := range invalidInput {
+		result, err := ParseSize(test)
+		if err == nil {
+			t.Errorf("TestParseSize(%q) didn't return error. Returned: %q", test, result)
+		}
+	}
+}
+
 func TestVerifyThresholds(t *testing.T) {
 	validInput := []string{
 		"high=3 low=1",
@@ -413,6 +453,43 @@ func TestVerifyThresholds(t *testing.T) {
 	for _, input := range invalidInput {
 		if VerifyAppProtectThresholds(input) {
 			t.Errorf("VerifyAppProtectThresholds(%s) returned true,expected false", input)
+		}
+	}
+}
+
+func TestParseNonNegativeInt(t *testing.T) {
+	var testsWithValidInput = []struct {
+		input    string
+		expected int
+	}{
+		{"0", 0},
+		{"1", 1},
+		{"2", 2},
+		{"100", 100},
+	}
+
+	var invalidInput = []string{
+		"",
+		"blablah",
+		"-100",
+		"-1",
+	}
+
+	for _, test := range testsWithValidInput {
+		result, err := ParseNonNegativeInt(test.input)
+		if err != nil {
+			t.Errorf("TestParseNonNegativeInt(%q) returned an error for valid input", test.input)
+		}
+
+		if result != test.expected {
+			t.Errorf("TestParseNonNegativeInt(%q) returned %q expected %q", test.input, result, test.expected)
+		}
+	}
+
+	for _, input := range invalidInput {
+		_, err := ParseNonNegativeInt(input)
+		if err == nil {
+			t.Errorf("TestParseNonNegativeInt(%q) does not return an error for invalid input", input)
 		}
 	}
 }

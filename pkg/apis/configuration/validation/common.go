@@ -2,6 +2,7 @@ package validation
 
 import (
 	"fmt"
+	"github.com/nginxinc/kubernetes-ingress/internal/configs"
 	"regexp"
 	"strings"
 
@@ -135,10 +136,42 @@ func validateStringWithVariables(str string, fieldPath *field.Path, specialVars 
 	return allErrs
 }
 
-const sizeFmt = `\d+[kKmM]?`
+func validateTime(time string, fieldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if time == "" {
+		return allErrs
+	}
+
+	if _, err := configs.ParseTime(time); err != nil {
+		return append(allErrs, field.Invalid(fieldPath, time, err.Error()))
+	}
+
+	return allErrs
+}
+
+// http://nginx.org/en/docs/syntax.html
+const offsetErrMsg = "must consist of numeric characters followed by a valid size suffix. 'k|K|m|M|g|G"
+
+func validateOffset(offset string, fieldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if offset == "" {
+		return allErrs
+	}
+
+	if _, err := configs.ParseOffset(offset); err != nil {
+		msg := validation.RegexError(offsetErrMsg, configs.OffsetFmt, "16", "32k", "64M", "2G")
+		return append(allErrs, field.Invalid(fieldPath, offset, msg))
+	}
+
+	return allErrs
+}
+
+// http://nginx.org/en/docs/syntax.html
 const sizeErrMsg = "must consist of numeric characters followed by a valid size suffix. 'k|K|m|M"
 
-var sizeRegexp = regexp.MustCompile("^" + sizeFmt + "$")
+var sizeRegexp = regexp.MustCompile("^" + configs.SizeFmt + "$")
 
 func validateSize(size string, fieldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
@@ -147,8 +180,8 @@ func validateSize(size string, fieldPath *field.Path) field.ErrorList {
 		return allErrs
 	}
 
-	if !sizeRegexp.MatchString(size) {
-		msg := validation.RegexError(sizeErrMsg, sizeFmt, "16", "32k", "64M")
+	if _, err := configs.ParseSize(size); err != nil {
+		msg := validation.RegexError(sizeErrMsg, configs.SizeFmt, "16", "32k", "64M")
 		return append(allErrs, field.Invalid(fieldPath, size, msg))
 	}
 	return allErrs

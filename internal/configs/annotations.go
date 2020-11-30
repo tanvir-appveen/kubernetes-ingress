@@ -162,15 +162,27 @@ func parseAnnotations(ingEx *IngressEx, baseCfgParams *ConfigParams, isPlus bool
 	}
 
 	if proxyConnectTimeout, exists := ingEx.Ingress.Annotations["nginx.org/proxy-connect-timeout"]; exists {
-		cfgParams.ProxyConnectTimeout = proxyConnectTimeout
+		if parsedProxyConnectTimeout, err := ParseTime(proxyConnectTimeout); err != nil {
+			glog.Errorf("Ingress %s/%s: Invalid value nginx.org/proxy-connect-timeout: got %q: %v", ingEx.Ingress.GetNamespace(), ingEx.Ingress.GetName(), proxyConnectTimeout, err)
+		} else {
+			cfgParams.ProxyConnectTimeout = parsedProxyConnectTimeout
+		}
 	}
 
 	if proxyReadTimeout, exists := ingEx.Ingress.Annotations["nginx.org/proxy-read-timeout"]; exists {
-		cfgParams.ProxyReadTimeout = proxyReadTimeout
+		if parsedProxyReadTimeout, err := ParseTime(proxyReadTimeout); err != nil {
+			glog.Errorf("Ingress %s/%s: Invalid value nginx.org/proxy-read-timeout: got %q: %v", ingEx.Ingress.GetNamespace(), ingEx.Ingress.GetName(), proxyReadTimeout, err)
+		} else {
+			cfgParams.ProxyReadTimeout = parsedProxyReadTimeout
+		}
 	}
 
 	if proxySendTimeout, exists := ingEx.Ingress.Annotations["nginx.org/proxy-send-timeout"]; exists {
-		cfgParams.ProxySendTimeout = proxySendTimeout
+		if parsedProxySendTimeout, err := ParseTime(proxySendTimeout); err != nil {
+			glog.Errorf("Ingress %s/%s: Invalid value nginx.org/proxy-send-timeout: got %q: %v", ingEx.Ingress.GetNamespace(), ingEx.Ingress.GetName(), proxySendTimeout, err)
+		} else {
+			cfgParams.ProxySendTimeout = parsedProxySendTimeout
+		}
 	}
 
 	if proxyHideHeaders, exists, err := GetMapKeyAsStringSlice(ingEx.Ingress.Annotations, "nginx.org/proxy-hide-headers", ingEx.Ingress, ","); exists {
@@ -190,7 +202,11 @@ func parseAnnotations(ingEx *IngressEx, baseCfgParams *ConfigParams, isPlus bool
 	}
 
 	if clientMaxBodySize, exists := ingEx.Ingress.Annotations["nginx.org/client-max-body-size"]; exists {
-		cfgParams.ClientMaxBodySize = clientMaxBodySize
+		if parsedClientMaxBodySize, err := ParseOffset(clientMaxBodySize); err != nil {
+			glog.Errorf("Ingress %s/%s: Invalid value nginx.org/client-max-body-size: got %q: %v", ingEx.Ingress.GetNamespace(), ingEx.Ingress.GetName(), clientMaxBodySize, err)
+		} else {
+			cfgParams.ClientMaxBodySize = parsedClientMaxBodySize
+		}
 	}
 
 	if redirectToHTTPS, exists, err := GetMapKeyAsBool(ingEx.Ingress.Annotations, "nginx.org/redirect-to-https", ingEx.Ingress); exists {
@@ -257,19 +273,35 @@ func parseAnnotations(ingEx *IngressEx, baseCfgParams *ConfigParams, isPlus bool
 	}
 
 	if proxyBuffers, exists := ingEx.Ingress.Annotations["nginx.org/proxy-buffers"]; exists {
-		cfgParams.ProxyBuffers = proxyBuffers
+		if parsedProxyBuffers, err := ParseProxyBuffers(proxyBuffers); err != nil {
+			glog.Errorf("Ingress %s/%s: Invalid value nginx.org/proxy-buffers: got %q: %v", ingEx.Ingress.GetNamespace(), ingEx.Ingress.GetName(), proxyBuffers, err)
+		} else {
+			cfgParams.ProxyBuffers = parsedProxyBuffers
+		}
 	}
 
 	if proxyBufferSize, exists := ingEx.Ingress.Annotations["nginx.org/proxy-buffer-size"]; exists {
-		cfgParams.ProxyBufferSize = proxyBufferSize
+		if parsedProxyBufferSize, err := ParseSize(proxyBufferSize); err != nil {
+			glog.Errorf("Ingress %s/%s: Invalid value nginx.org/proxy-buffer-size: got %q: %v", ingEx.Ingress.GetNamespace(), ingEx.Ingress.GetName(), proxyBufferSize, err)
+		} else {
+			cfgParams.ProxyBufferSize = parsedProxyBufferSize
+		}
 	}
 
 	if upstreamZoneSize, exists := ingEx.Ingress.Annotations["nginx.org/upstream-zone-size"]; exists {
-		cfgParams.UpstreamZoneSize = upstreamZoneSize
+		if parsedUpstreamZoneSize, err := ParseSize(upstreamZoneSize); err != nil {
+			glog.Errorf("Ingress %s/%s: Invalid value nginx.org/upstream-zone-size: got %q: %v", ingEx.Ingress.GetNamespace(), ingEx.Ingress.GetName(), upstreamZoneSize, err)
+		} else {
+			cfgParams.UpstreamZoneSize = parsedUpstreamZoneSize
+		}
 	}
 
 	if proxyMaxTempFileSize, exists := ingEx.Ingress.Annotations["nginx.org/proxy-max-temp-file-size"]; exists {
-		cfgParams.ProxyMaxTempFileSize = proxyMaxTempFileSize
+		if parsedProxyMaxTempFileSize, err := ParseSize(proxyMaxTempFileSize); err != nil {
+			glog.Errorf("Ingress %s/%s: Invalid value nginx.org/proxy-max-temp-file-size: got %q: %v", ingEx.Ingress.GetNamespace(), ingEx.Ingress.GetName(), proxyMaxTempFileSize, err)
+		} else {
+			cfgParams.ProxyMaxTempFileSize = parsedProxyMaxTempFileSize
+		}
 	}
 
 	if isPlus {
@@ -304,24 +336,28 @@ func parseAnnotations(ingEx *IngressEx, baseCfgParams *ConfigParams, isPlus bool
 		}
 	}
 
-	if maxFails, exists, err := GetMapKeyAsInt(ingEx.Ingress.Annotations, "nginx.org/max-fails", ingEx.Ingress); exists {
-		if err != nil {
-			glog.Error(err)
+	if maxFails, exists := ingEx.Ingress.Annotations["nginx.org/max-fails"]; exists {
+		if parsedMaxFails, err := ParseNonNegativeInt(maxFails); err != nil {
+			glog.Errorf("Ingress %s/%s: Invalid value nginx.org/max-fails: got %q: %v", ingEx.Ingress.GetNamespace(), ingEx.Ingress.GetName(), maxFails, err)
 		} else {
-			cfgParams.MaxFails = maxFails
+			cfgParams.MaxFails = parsedMaxFails
 		}
 	}
 
-	if maxConns, exists, err := GetMapKeyAsInt(ingEx.Ingress.Annotations, "nginx.org/max-conns", ingEx.Ingress); exists {
-		if err != nil {
-			glog.Error(err)
+	if maxConns, exists := ingEx.Ingress.Annotations["nginx.org/max-conns"]; exists {
+		if parsedMaxConns, err := ParseNonNegativeInt(maxConns); err != nil {
+			glog.Errorf("Ingress %s/%s: Invalid value nginx.org/max-conns: got %q: %v", ingEx.Ingress.GetNamespace(), ingEx.Ingress.GetName(), maxConns, err)
 		} else {
-			cfgParams.MaxConns = maxConns
+			cfgParams.MaxConns = parsedMaxConns
 		}
 	}
 
 	if failTimeout, exists := ingEx.Ingress.Annotations["nginx.org/fail-timeout"]; exists {
-		cfgParams.FailTimeout = failTimeout
+		if parsedFailTimeout, err := ParseTime(failTimeout); err != nil {
+			glog.Errorf("Ingress %s/%s: Invalid value nginx.org/fail-timeout: got %q: %v", ingEx.Ingress.GetNamespace(), ingEx.Ingress.GetName(), failTimeout, err)
+		} else {
+			cfgParams.FailTimeout = parsedFailTimeout
+		}
 	}
 
 	if hasAppProtect {

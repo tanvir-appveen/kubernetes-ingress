@@ -4,6 +4,9 @@ import (
 	"reflect"
 	"sort"
 	"testing"
+
+	networking "k8s.io/api/networking/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestParseRewrites(t *testing.T) {
@@ -149,5 +152,691 @@ func TestMergeMasterAnnotationsIntoMinion(t *testing.T) {
 	}
 	if !reflect.DeepEqual(expectedMergedAnnotations, minionAnnotations) {
 		t.Errorf("mergeMasterAnnotationsIntoMinion returned %v, but expected %v", minionAnnotations, expectedMergedAnnotations)
+	}
+}
+
+func TestParseProxyConnectTimeoutAnnotation(t *testing.T) {
+	baseCfg := NewDefaultConfigParams()
+	defaultTimeout := baseCfg.ProxyConnectTimeout
+	tests := []struct {
+		ing      *IngressEx
+		baseCfg  *ConfigParams
+		expected string
+	}{
+		{
+			ing: &IngressEx{
+				Ingress: &networking.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{},
+					},
+				},
+			},
+			baseCfg:  baseCfg,
+			expected: defaultTimeout,
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-connect-timeout", "30s"),
+			baseCfg:  baseCfg,
+			expected: "30s",
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-connect-timeout", "1m 30s"),
+			baseCfg:  baseCfg,
+			expected: "1m 30s",
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-connect-timeout", "1m30s"),
+			baseCfg:  baseCfg,
+			expected: "1m30s",
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-connect-timeout", "30s 2m"),
+			baseCfg:  baseCfg,
+			expected: "30s 2m",
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-connect-timeout", "10s"),
+			baseCfg:  baseCfg,
+			expected: "10s",
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-connect-timeout", "60secs"),
+			baseCfg:  baseCfg,
+			expected: defaultTimeout,
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-connect-timeout", "invalid_time_string"),
+			baseCfg:  baseCfg,
+			expected: defaultTimeout,
+		},
+	}
+
+	for _, test := range tests {
+		cfg := parseAnnotations(test.ing, test.baseCfg, true, false, false)
+		if test.expected != cfg.ProxyConnectTimeout {
+			t.Errorf("parseAnnotations() returned cfg.ProxyConnectTimeout with %v, but expected %v", cfg.ProxyConnectTimeout, test.expected)
+		}
+	}
+}
+
+func TestParseProxyReadTimeoutAnnotation(t *testing.T) {
+	baseCfg := NewDefaultConfigParams()
+	defaultTimeout := baseCfg.ProxyReadTimeout
+	tests := []struct {
+		ing      *IngressEx
+		baseCfg  *ConfigParams
+		expected string
+	}{
+		{
+			ing: &IngressEx{
+				Ingress: &networking.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{},
+					},
+				},
+			},
+			baseCfg:  baseCfg,
+			expected: defaultTimeout,
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-read-timeout", "30s"),
+			baseCfg:  baseCfg,
+			expected: "30s",
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-read-timeout", "1m 30s"),
+			baseCfg:  baseCfg,
+			expected: "1m 30s",
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-read-timeout", "1m30s"),
+			baseCfg:  baseCfg,
+			expected: "1m30s",
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-read-timeout", "30s 2m"),
+			baseCfg:  baseCfg,
+			expected: "30s 2m",
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-read-timeout", "10s"),
+			baseCfg:  baseCfg,
+			expected: "10s",
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-read-timeout", "60secs"),
+			baseCfg:  baseCfg,
+			expected: defaultTimeout,
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-read-timeout", "invalid_time_string"),
+			baseCfg:  baseCfg,
+			expected: defaultTimeout,
+		},
+	}
+
+	for _, test := range tests {
+		cfg := parseAnnotations(test.ing, test.baseCfg, true, false, false)
+		if test.expected != cfg.ProxyReadTimeout {
+			t.Errorf("parseAnnotations() returned cfg.ProxyReadTimeout with %v, but expected %v", cfg.ProxyReadTimeout, test.expected)
+		}
+	}
+}
+
+func TestParseProxySendTimeoutAnnotation(t *testing.T) {
+	baseCfg := NewDefaultConfigParams()
+	defaultTimeout := baseCfg.ProxySendTimeout
+	tests := []struct {
+		ing      *IngressEx
+		baseCfg  *ConfigParams
+		expected string
+	}{
+		{
+			ing: &IngressEx{
+				Ingress: &networking.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{},
+					},
+				},
+			},
+			baseCfg:  baseCfg,
+			expected: defaultTimeout,
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-send-timeout", "30s"),
+			baseCfg:  baseCfg,
+			expected: "30s",
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-send-timeout", "1m 30s"),
+			baseCfg:  baseCfg,
+			expected: "1m 30s",
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-send-timeout", "1m30s"),
+			baseCfg:  baseCfg,
+			expected: "1m30s",
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-send-timeout", "30s 2m"),
+			baseCfg:  baseCfg,
+			expected: "30s 2m",
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-send-timeout", "10s"),
+			baseCfg:  baseCfg,
+			expected: "10s",
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-send-timeout", "60secs"),
+			baseCfg:  baseCfg,
+			expected: defaultTimeout,
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-send-timeout", "invalid_time_string"),
+			baseCfg:  baseCfg,
+			expected: defaultTimeout,
+		},
+	}
+
+	for _, test := range tests {
+		cfg := parseAnnotations(test.ing, test.baseCfg, true, false, false)
+		if test.expected != cfg.ProxySendTimeout {
+			t.Errorf("parseAnnotations() returned cfg.ProxySendTimeout with %v, but expected %v", cfg.ProxySendTimeout, test.expected)
+		}
+	}
+}
+
+func TestParseFailTimeoutAnnotation(t *testing.T) {
+	baseCfg := NewDefaultConfigParams()
+	defaultTimeout := baseCfg.FailTimeout
+	tests := []struct {
+		ing      *IngressEx
+		baseCfg  *ConfigParams
+		expected string
+	}{
+		{
+			ing: &IngressEx{
+				Ingress: &networking.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{},
+					},
+				},
+			},
+			baseCfg:  baseCfg,
+			expected: defaultTimeout,
+		},
+		{
+			ing:      createTestIngress("nginx.org/fail-timeout", "30s"),
+			baseCfg:  baseCfg,
+			expected: "30s",
+		},
+		{
+			ing:      createTestIngress("nginx.org/fail-timeout", "1m 30s"),
+			baseCfg:  baseCfg,
+			expected: "1m 30s",
+		},
+		{
+			ing:      createTestIngress("nginx.org/fail-timeout", "1m30s"),
+			baseCfg:  baseCfg,
+			expected: "1m30s",
+		},
+		{
+			ing:      createTestIngress("nginx.org/fail-timeout", "30s 2m"),
+			baseCfg:  baseCfg,
+			expected: "30s 2m",
+		},
+		{
+			ing:      createTestIngress("nginx.org/fail-timeout", "10s"),
+			baseCfg:  baseCfg,
+			expected: "10s",
+		},
+		{
+			ing:      createTestIngress("nginx.org/fail-timeout", "60secs"),
+			baseCfg:  baseCfg,
+			expected: defaultTimeout,
+		},
+		{
+			ing:      createTestIngress("nginx.org/fail-timeout", "invalid_time_string"),
+			baseCfg:  baseCfg,
+			expected: defaultTimeout,
+		},
+	}
+
+	for _, test := range tests {
+		cfg := parseAnnotations(test.ing, test.baseCfg, true, false, false)
+		if test.expected != cfg.FailTimeout {
+			t.Errorf("parseAnnotations() returned cfg.FailTimeout with %v, but expected %v", cfg.FailTimeout, test.expected)
+		}
+	}
+}
+
+func TestParseClientMaxBodySizeAnnotation(t *testing.T) {
+	baseCfg := NewDefaultConfigParams()
+	defaultSize := baseCfg.ClientMaxBodySize
+	tests := []struct {
+		ing      *IngressEx
+		baseCfg  *ConfigParams
+		expected string
+	}{
+		{
+			ing: &IngressEx{
+				Ingress: &networking.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{},
+					},
+				},
+			},
+			baseCfg:  baseCfg,
+			expected: defaultSize,
+		},
+		{
+			ing:      createTestIngress("nginx.org/client-max-body-size", "2k"),
+			baseCfg:  baseCfg,
+			expected: "2k",
+		},
+		{
+			ing:      createTestIngress("nginx.org/client-max-body-size", "16M"),
+			baseCfg:  baseCfg,
+			expected: "16M",
+		},
+		{
+			ing:      createTestIngress("nginx.org/client-max-body-size", "1g"),
+			baseCfg:  baseCfg,
+			expected: "1g",
+		},
+		{
+			ing:      createTestIngress("nginx.org/client-max-body-size", "12M"),
+			baseCfg:  baseCfg,
+			expected: "12M",
+		},
+		{
+			ing:      createTestIngress("nginx.org/client-max-body-size", "32Megabytes"),
+			baseCfg:  baseCfg,
+			expected: defaultSize,
+		},
+		{
+			ing:      createTestIngress("nginx.org/client-max-body-size", "invalid_offset_string"),
+			baseCfg:  baseCfg,
+			expected: defaultSize,
+		},
+	}
+
+	for _, test := range tests {
+		cfg := parseAnnotations(test.ing, test.baseCfg, true, false, false)
+		if test.expected != cfg.ClientMaxBodySize {
+			t.Errorf("parseAnnotations() returned cfg.ClientMaxBodySize with %v, but expected %v", cfg.ClientMaxBodySize, test.expected)
+		}
+	}
+}
+
+func TestParseProxyBufferSizeAnnotation(t *testing.T) {
+	baseCfg := NewDefaultConfigParams()
+	defaultSize := baseCfg.ProxyBufferSize
+	tests := []struct {
+		ing      *IngressEx
+		baseCfg  *ConfigParams
+		expected string
+	}{
+		{
+			ing: &IngressEx{
+				Ingress: &networking.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{},
+					},
+				},
+			},
+			baseCfg:  baseCfg,
+			expected: defaultSize,
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-buffer-size", "2k"),
+			baseCfg:  baseCfg,
+			expected: "2k",
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-buffer-size", "16M"),
+			baseCfg:  baseCfg,
+			expected: "16M",
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-buffer-size", "12M"),
+			baseCfg:  baseCfg,
+			expected: "12M",
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-buffer-size", "1g"),
+			baseCfg:  baseCfg,
+			expected: defaultSize,
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-buffer-size", "32Megabytes"),
+			baseCfg:  baseCfg,
+			expected: defaultSize,
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-buffer-size", "invalid_size_string"),
+			baseCfg:  baseCfg,
+			expected: defaultSize,
+		},
+	}
+
+	for _, test := range tests {
+		cfg := parseAnnotations(test.ing, test.baseCfg, true, false, false)
+		if test.expected != cfg.ProxyBufferSize {
+			t.Errorf("parseAnnotations() returned cfg.ProxyBufferSize with %v, but expected %v", cfg.ProxyBufferSize, test.expected)
+		}
+	}
+}
+
+func TestParseProxyMaxTempFileSizeAnnotation(t *testing.T) {
+	baseCfg := NewDefaultConfigParams()
+	defaultSize := baseCfg.ProxyMaxTempFileSize
+	tests := []struct {
+		ing      *IngressEx
+		baseCfg  *ConfigParams
+		expected string
+	}{
+		{
+			ing: &IngressEx{
+				Ingress: &networking.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{},
+					},
+				},
+			},
+			baseCfg:  baseCfg,
+			expected: defaultSize,
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-max-temp-file-size", "2k"),
+			baseCfg:  baseCfg,
+			expected: "2k",
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-max-temp-file-size", "16M"),
+			baseCfg:  baseCfg,
+			expected: "16M",
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-max-temp-file-size", "12M"),
+			baseCfg:  baseCfg,
+			expected: "12M",
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-max-temp-file-size", "1g"),
+			baseCfg:  baseCfg,
+			expected: defaultSize,
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-max-temp-file-size", "32Megabytes"),
+			baseCfg:  baseCfg,
+			expected: defaultSize,
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-max-temp-file-size", "invalid_size_string"),
+			baseCfg:  baseCfg,
+			expected: defaultSize,
+		},
+	}
+
+	for _, test := range tests {
+		cfg := parseAnnotations(test.ing, test.baseCfg, true, false, false)
+		if test.expected != cfg.ProxyMaxTempFileSize {
+			t.Errorf("parseAnnotations() returned cfg.ProxyMaxTempFileSize with %v, but expected %v", cfg.ProxyMaxTempFileSize, test.expected)
+		}
+	}
+}
+
+func TestParseUpstreamZoneSizeAnnotation(t *testing.T) {
+	baseCfg := NewDefaultConfigParams()
+	defaultSize := baseCfg.UpstreamZoneSize
+	tests := []struct {
+		ing      *IngressEx
+		baseCfg  *ConfigParams
+		expected string
+	}{
+		{
+			ing: &IngressEx{
+				Ingress: &networking.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{},
+					},
+				},
+			},
+			baseCfg:  baseCfg,
+			expected: defaultSize,
+		},
+		{
+			ing:      createTestIngress("nginx.org/upstream-zone-size", "2k"),
+			baseCfg:  baseCfg,
+			expected: "2k",
+		},
+		{
+			ing:      createTestIngress("nginx.org/upstream-zone-size", "16M"),
+			baseCfg:  baseCfg,
+			expected: "16M",
+		},
+		{
+			ing:      createTestIngress("nginx.org/upstream-zone-size", "12M"),
+			baseCfg:  baseCfg,
+			expected: "12M",
+		},
+		{
+			ing:      createTestIngress("nginx.org/upstream-zone-size", "1g"),
+			baseCfg:  baseCfg,
+			expected: defaultSize,
+		},
+		{
+			ing:      createTestIngress("nginx.org/upstream-zone-size", "32Megabytes"),
+			baseCfg:  baseCfg,
+			expected: defaultSize,
+		},
+		{
+			ing:      createTestIngress("nginx.org/upstream-zone-size", "invalid_size_string"),
+			baseCfg:  baseCfg,
+			expected: defaultSize,
+		},
+	}
+
+	for _, test := range tests {
+		cfg := parseAnnotations(test.ing, test.baseCfg, true, false, false)
+		if test.expected != cfg.UpstreamZoneSize {
+			t.Errorf("parseAnnotations() returned cfg.UpstreamZoneSize with %v, but expected %v", cfg.UpstreamZoneSize, test.expected)
+		}
+	}
+}
+
+func TestParseMaxFailsAnnotation(t *testing.T) {
+	baseCfg := NewDefaultConfigParams()
+	defaultNum := baseCfg.MaxFails
+	tests := []struct {
+		ing      *IngressEx
+		baseCfg  *ConfigParams
+		expected int
+	}{
+		{
+			ing: &IngressEx{
+				Ingress: &networking.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{},
+					},
+				},
+			},
+			baseCfg:  baseCfg,
+			expected: defaultNum,
+		},
+		{
+			ing:      createTestIngress("nginx.org/max-fails", "0"),
+			baseCfg:  baseCfg,
+			expected: 0,
+		},
+		{
+			ing:      createTestIngress("nginx.org/max-fails", "1"),
+			baseCfg:  baseCfg,
+			expected: 1,
+		},
+		{
+			ing:      createTestIngress("nginx.org/max-fails", "100"),
+			baseCfg:  baseCfg,
+			expected: 100,
+		},
+		{
+			ing:      createTestIngress("nginx.org/max-fails", "-1"),
+			baseCfg:  baseCfg,
+			expected: defaultNum,
+		},
+		{
+			ing:      createTestIngress("nginx.org/max-fails", "-100"),
+			baseCfg:  baseCfg,
+			expected: defaultNum,
+		},
+		{
+			ing:      createTestIngress("nginx.org/max-fails", "invalid_non_negative_int"),
+			baseCfg:  baseCfg,
+			expected: defaultNum,
+		},
+	}
+
+	for _, test := range tests {
+		cfg := parseAnnotations(test.ing, test.baseCfg, true, false, false)
+		if test.expected != cfg.MaxFails {
+			t.Errorf("parseAnnotations() returned cfg.MaxFails with %v, but expected %v", cfg.MaxFails, test.expected)
+		}
+	}
+}
+
+func TestParseMaxConnsAnnotation(t *testing.T) {
+	baseCfg := NewDefaultConfigParams()
+	defaultNum := baseCfg.MaxConns
+	tests := []struct {
+		ing      *IngressEx
+		baseCfg  *ConfigParams
+		expected int
+	}{
+		{
+			ing: &IngressEx{
+				Ingress: &networking.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{},
+					},
+				},
+			},
+			baseCfg:  baseCfg,
+			expected: defaultNum,
+		},
+		{
+			ing:      createTestIngress("nginx.org/max-conns", "0"),
+			baseCfg:  baseCfg,
+			expected: 0,
+		},
+		{
+			ing:      createTestIngress("nginx.org/max-conns", "1"),
+			baseCfg:  baseCfg,
+			expected: 1,
+		},
+		{
+			ing:      createTestIngress("nginx.org/max-conns", "100"),
+			baseCfg:  baseCfg,
+			expected: 100,
+		},
+		{
+			ing:      createTestIngress("nginx.org/max-conns", "-1"),
+			baseCfg:  baseCfg,
+			expected: defaultNum,
+		},
+		{
+			ing:      createTestIngress("nginx.org/max-conns", "-100"),
+			baseCfg:  baseCfg,
+			expected: defaultNum,
+		},
+		{
+			ing:      createTestIngress("nginx.org/max-conns", "invalid_non_negative_int"),
+			baseCfg:  baseCfg,
+			expected: defaultNum,
+		},
+	}
+
+	for _, test := range tests {
+		cfg := parseAnnotations(test.ing, test.baseCfg, true, false, false)
+		if test.expected != cfg.MaxConns {
+			t.Errorf("parseAnnotations() returned cfg.MaxConns with %v, but expected %v", cfg.MaxConns, test.expected)
+		}
+	}
+}
+
+func TestParseProxyBuffersAnnotation(t *testing.T) {
+	baseCfg := NewDefaultConfigParams()
+	defaultSetting := baseCfg.ProxyBuffers
+	tests := []struct {
+		ing      *IngressEx
+		baseCfg  *ConfigParams
+		expected string
+	}{
+		{
+			ing: &IngressEx{
+				Ingress: &networking.Ingress{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{},
+					},
+				},
+			},
+			baseCfg:  baseCfg,
+			expected: defaultSetting,
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-buffers", "8 2k"),
+			baseCfg:  baseCfg,
+			expected: "8 2k",
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-buffers", "4 16M"),
+			baseCfg:  baseCfg,
+			expected: "4 16M",
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-buffers", "1 12M"),
+			baseCfg:  baseCfg,
+			expected: "1 12M",
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-buffers", "2k"),
+			baseCfg:  baseCfg,
+			expected: defaultSetting,
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-buffers", "8 1g"),
+			baseCfg:  baseCfg,
+			expected: defaultSetting,
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-buffers", "6 32Megabytes"),
+			baseCfg:  baseCfg,
+			expected: defaultSetting,
+		},
+		{
+			ing:      createTestIngress("nginx.org/proxy-buffers", "invalid_proxy_buffers_string"),
+			baseCfg:  baseCfg,
+			expected: defaultSetting,
+		},
+	}
+
+	for _, test := range tests {
+		cfg := parseAnnotations(test.ing, test.baseCfg, true, false, false)
+		if test.expected != cfg.ProxyBuffers {
+			t.Errorf("parseAnnotations() returned cfg.ProxyBuffers with %v, but expected %v", cfg.ProxyBuffers, test.expected)
+		}
+	}
+}
+
+func createTestIngress(name string, value string) *IngressEx {
+	return &IngressEx{
+		Ingress: &networking.Ingress{
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					name: value,
+				},
+			},
+		},
 	}
 }
